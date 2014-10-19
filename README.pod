@@ -1,0 +1,150 @@
+=head1 NAME
+
+mHashTable - minimal hash table for C
+
+=head1 DESCRIPTION
+
+=head2 Types
+
+=over
+
+=item typedef mht_t
+
+ typedef struct mht_t {
+     mht_hashfn_t hashfn;
+     mht_cmpfn_t cmpfn;
+     size_t size;
+     mht_item_t **buckets;
+ } mht_t;
+
+=item typedef mht_item_t
+
+ typedef struct mht_item_t { 
+     size_t hash;
+     const char *key;
+     const void *value;
+     struct mht_item_t *next;
+ } mht_item_t;
+
+=item typedef size_t (*mht_hashfn_t)(const char *key);
+
+Function to generate a hash from a string.  Defaults to C<mht_hashfn_sdbm>.
+
+=item typedef int (*mht_cmpfn_t)(const char *key1, const char *key2);
+
+Function to compare two keys for equality.  Defaults to C<strcmp>.
+
+=back
+
+=head2 Functions
+
+=over
+
+=item mht_new(size_t size);
+
+Allocate and initialize a new C<mht_t> object with C<size> buckets.  Defaults
+to 128 buckets if C<size> is C<0>.
+
+=item size_t mht_hashfn_sdbm(const char *key);
+
+Default hash function.
+
+=item mht_item_t *mht_next_item(mht_t *table, mht_item_t *item);
+
+Iterate over the hash one item at a time.  Returns the first item if C<item> is
+C<NULL>.
+
+=item void mht_free(mht_t *mht);
+
+Free the C<mht_t> object.  B<NOTE:> does NOT free keys or values;
+C<mht_next_item> may be used to manually free them, if necessary.
+
+=item mht_item_t *mht_get_item(mht_t *mht, const char *key);
+
+Retrieve the C<mht_item_t> associated with C<key>.  Returns C<NULL> if none
+exists.
+
+=item int mht_delete_item(mht_t *mht, const char *key);
+
+Removes and C<free>s the C<mht_item_t> associated with C<key>.  B<NOTE:> does
+not free the associated key or value.  Returns C<1> if the item was
+successfully removed or C<0> if no value was associated with C<key>.
+
+=item int mht_set_value(mht_t *mht, const char *key, const void *value);
+
+Associate C<value> with C<key>  B<NOTE:> if a value is already associated with
+C<key> it will be overwritten without being C<free>d.  Returns C<1> if the
+value was successfully set or C<0> if memory could not be allocated for it.
+
+=item void *mht_get_value(mht_t *mht, const char *key);
+
+Retrieve the value associated with C<key>.  Returns C<NULL> if there is no
+value for C<key>.  Users needing to distinguish between a missing key and
+C<NULL> value may use either C<mht_get_item> or C<mht_contains>.
+
+=item int mht_contains(mht_t *mht, const char *key);
+
+Returns C<1> if C<mht> contains C<key>, C<0> otherwise.
+
+=back
+
+=head1 EXAMPLES
+
+ #include <stdio.h>  /* perror printf */
+ #include <string.h> /* strdup */
+ #include <stdlib.h> /* exit */
+ 
+ #include "mht.c"
+ 
+ /* mht_set_value wrapper with error handling */
+ void set_value(mht_t *h, const char *key, void *val) {
+     char *k = strdup(key); /* could also use key directly */
+     if(!k) { perror("strdup"); exit(1); }
+     if(!mht_set_value(h, k, val)) { perror("mht_set_value"); exit(1); }
+ }
+ 
+ int main(void) {
+     mht_t *h = mht_new(16);
+     mht_item_t *i = NULL;
+ 
+     set_value(h, "foo", "bar");
+     set_value(h, "bar", "baz");
+     set_value(h, "baz", "foo");
+ 
+     printf("%s => %s\n", "foo", (char *) mht_get_value(h, "foo"));
+     printf("%s => %s\n", "bar", (char *) mht_get_value(h, "bar"));
+     printf("%s => %s\n", "baz", (char *) mht_get_value(h, "baz"));
+ 
+     while((i = mht_next_item(h, i))) {
+         free((char *) i->key); /* only the keys were malloc'd */
+     }
+     mht_free(h);
+ 
+     return 0;
+ }
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2014 Andrew Gregory <andrew.gregory.8@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+=head1 SEE ALSO
+
+Project URL: L<http://github.com/andrewgregory/mHashTable>

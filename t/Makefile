@@ -2,15 +2,17 @@
 
 CFLAGS += -Wall -Wextra -g -I..
 
+PROVE = prove --exec ./runtest
+
 TESTS = 01-sanity.t 10-basic.t 10-collision.t 90-smoke.t
 
 01-sanity.t: CFLAGS += -std=c99 -pedantic -Werror
 
-%.t: %.c ../mht.c ../mht.h tap.c/tap.c
+%.t: %.c ../mhashtable.c ../mhashtable.h tap.c/tap.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $< $(LDLIBS) -o $@
 
 check: tests
-	prove .
+	$(PROVE) $(TESTS)
 
 gcov: CC = gcc
 gcov: CFLAGS += -fprofile-arcs -ftest-coverage
@@ -20,6 +22,9 @@ gcov: check
 gprof: CC = gcc
 gprof: CFLAGS += -pg
 gprof: check
+
+memcheck: PROVE += --exec 'valgrind --leak-check=full --error-exitcode=99 --quiet'
+memcheck: check
 
 tests: $(TESTS)
 

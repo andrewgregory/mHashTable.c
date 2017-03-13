@@ -1,6 +1,6 @@
 #include "tap.c/tap.c"
 
-#include "mht.c"
+#include "mhashtable.c"
 
 /* just verify the library compiles */
 

@@ -1,6 +1,9 @@
 #include "tap.c/tap.c"
 
-#include "mht.c"
+#include "mhashtable.c"
+
+/* build, loop through, and destroy a large hash to catch significant
+ * performance hits */
 
 int main(void) {
     size_t i, limit = 100000;

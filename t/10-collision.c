@@ -1,6 +1,6 @@
 #include "tap.c/tap.c"
 
-#include "mht.c"
+#include "mhashtable.c"
 
 int main(void) {
     mht_t *h = mht_new(1); /* force hash collision */
@@ -10,13 +10,14 @@ int main(void) {
 #define CHECK_INSERT(key, val) \
     tap_is_int(mht_set_value(h, key, val), 1, "set %s => %s", key, val)
 
-#define CHECK_KEY(key, val) do { \
-    mht_item_t *i = mht_get_item(h, key); \
-    if(tap_ok(i != NULL, "fetch %s", key)) \
+#define CHECK_KEY(key, val) \
+    do { \
+        mht_item_t *i = mht_get_item(h, key); \
+        if(tap_ok(i != NULL, "fetch %s", key)) \
         { tap_is_str(i->value, val, "%s => %s", key, val); } \
-    else \
+        else \
         { tap_ok(0, "%s => %s", key, val); } \
-} while (0)
+    } while (0)
 
     CHECK_INSERT("foo", "bar");
     CHECK_INSERT("bar", "baz");
